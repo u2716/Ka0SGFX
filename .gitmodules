@@ -1,0 +1,7 @@
+[submodule "third_party/bhook"]
+    path = third_party/bhook
+    url = https://github.com/bytedance/bhook.git
+
+[submodule "third_party/libadrenotools"]
+    path = third_party/libadrenotools
+    url = https://github.com/bylaws/libadrenotools.git
