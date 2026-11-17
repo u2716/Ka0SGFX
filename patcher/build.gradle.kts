@@ -23,6 +23,7 @@ android {
 }
 
 dependencies {
+    implementation("org.bouncycastle:bcprov-jdk18on:1.78")
     implementation("io.github.reandroid:ARSCLib:1.3.5")
     implementation("com.android.tools.build:apksig:9.0.1")
 
