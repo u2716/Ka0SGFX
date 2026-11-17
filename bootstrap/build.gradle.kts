@@ -29,14 +29,22 @@ dependencies {
 tasks.register("generateBootstrapDex") {
     dependsOn("compileReleaseJavaWithJavac")
 
-    val buildToolsDir = "/opt/homebrew/share/android-commandlinetools/build-tools/36.0.0"
-    val d8Path = "$buildToolsDir/d8"
-    val androidJar = "/opt/homebrew/share/android-commandlinetools/platforms/android-36/android.jar"
-    val classesDir = layout.buildDirectory.dir("intermediates/javac/release/compileReleaseJavaWithJavac/classes")
-    val outputDir = layout.buildDirectory.dir("outputs/dex")
-    val patcherResourcesDir = file("${project.rootDir}/patcher/src/main/resources")
-
     doLast {
+        // Resolve SDK path using environment variables or standard fallback locations
+        val sdkDir = System.getenv("ANDROID_SDK_ROOT") 
+            ?: System.getenv("ANDROID_HOME") 
+            ?: "/usr/local/lib/android/sdk"
+
+        val buildToolsVersion = "36.0.0"
+        val compileSdkVer = "36"
+
+        val d8Path = "$sdkDir/build-tools/$buildToolsVersion/d8"
+        val androidJar = "$sdkDir/platforms/android-$compileSdkVer/android.jar"
+
+        val classesDir = layout.buildDirectory.dir("intermediates/javac/release/compileReleaseJavaWithJavac/classes")
+        val outputDir = layout.buildDirectory.dir("outputs/dex")
+        val patcherResourcesDir = file("${project.rootDir}/patcher/src/main/resources")
+
         val outDex = outputDir.get().asFile
         outDex.mkdirs()
 
@@ -55,8 +63,6 @@ tasks.register("generateBootstrapDex") {
         configurations.getByName("releaseRuntimeClasspath").files.forEach { file ->
             when (file.extension) {
                 "jar" -> {
-                    // Skip kotlin-stdlib or heavy runtimes if not needed, or include them if shadowhook needs them
-                    // Bytehook and shadowhook don't depend on kotlin-stdlib; shadowhook is pure java/c++
                     depJars.add(file.absolutePath)
                 }
                 "aar" -> {
