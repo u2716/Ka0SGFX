@@ -1,10 +1,12 @@
 package dev.kaos.kaosgfx.patcher
 
 import com.android.apksig.ApkSigner
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.io.File
 import java.io.InputStream
 import java.security.KeyStore
 import java.security.PrivateKey
+import java.security.Security
 import java.security.cert.X509Certificate
 
 object ApkSignerUtil {
@@ -22,13 +24,22 @@ object ApkSignerUtil {
             ?: throw IllegalStateException("Resource $DEFAULT_KEYSTORE_RESOURCE not found")
 
         stream.use { input ->
-            val ks = KeyStore.getInstance("PKCS12")
+            // 1. Remove Android's built‑in BC provider to avoid conflicts
+            Security.removeProvider("BC")
+
+            // 2. Register the full Bouncy Castle provider
+            Security.addProvider(BouncyCastleProvider())
+
+            // 3. Explicitly load the PKCS12 keystore using the BC provider
+            val ks = KeyStore.getInstance("PKCS12", "BC")
             ks.load(input, KEYSTORE_PASS.toCharArray())
+
             val key = ks.getKey(ALIAS, KEYSTORE_PASS.toCharArray()) as? PrivateKey
                 ?: throw IllegalStateException("Key alias $ALIAS not found in keystore")
             val certChain = ks.getCertificateChain(ALIAS)
                 ?: throw IllegalStateException("Certificate chain for alias $ALIAS not found")
             val certs = certChain.map { it as X509Certificate }
+
             return SignerCredentials(key, certs)
         }
     }
